@@ -55,4 +55,45 @@ def analyze_cv_hf(cv_text):
     }
 
     try:
-        response =
+        response = requests.post(
+            f"https://api-inference.huggingface.co/models/{HF_MODEL_NAME}",
+            headers=headers,
+            json=payload,
+            timeout=30,  # Add timeout (in seconds)
+        )
+        response.raise_for_status()  # Raise HTTPError for bad responses
+
+        data = response.json()
+        if isinstance(data, list) and data and "generated_text" in data[0]:
+            return clean_text(data[0]["generated_text"])
+        else:
+            return "Error: Unexpected API response."
+
+    except requests.exceptions.Timeout:
+        return "Error: API request timed out."
+    except requests.exceptions.RequestException as e:
+        return f"Error analyzing CV: {e}"
+    except ValueError as e:
+        return f"Error parsing API response: {e}"
+    except Exception as e:
+        return f"An unexpected error occurred: {e}"
+
+
+# --- Streamlit UI ---
+st.title("ATS CV Analyzer")
+st.markdown(
+    """
+    Upload your CV (PDF) to get an ATS compliance analysis.
+    This tool helps you identify areas for improvement to increase your CV's visibility to Applicant Tracking Systems.
+    """
+)
+
+uploaded_file = st.file_uploader("Upload your CV (PDF)", type=["pdf"])
+
+if uploaded_file is not None:
+    extracted_text = extract_text_from_pdf(uploaded_file)
+    if extracted_text:
+        with st.spinner("Analyzing CV..."):
+            analysis_result = analyze_cv_hf(extracted_text)
+        st.subheader("Analysis Results")
+        st.write(analysis_result)
