@@ -2,24 +2,45 @@ import streamlit as st
 import PyPDF2
 import requests
 import os
+import re  # For potential regex-based cleaning
 
-HF_API_TOKEN = os.environ.get("HF_API_TOKEN")
+# --- API Configuration ---
+HF_API_TOKEN = st.secrets.get("HF_API_TOKEN")  # Streamlit Secrets (most secure)
 HF_MODEL_NAME = "google/flan-t5-xxl"  # Or your preferred Hugging Face model
-
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
+
+# --- Utility Functions ---
+def clean_text(text):
+    """
+    Optional: Cleans text (e.g., remove extra spaces, special chars).
+    You might want to customize this further based on your needs.
+    """
+    text = re.sub(r'\s+', ' ', text).strip()  # Remove extra spaces
+    return text
+
+
 def extract_text_from_pdf(file):
+    """Extracts text from a PDF file."""
     try:
         reader = PyPDF2.PdfReader(file)
         text = ""
         for page in reader.pages:
-            text += page.extract_text()
-        return text
+            text += page.extract_text() or ""  # Handle empty pages
+        return clean_text(text)  # Clean the extracted text
+    except PyPDF2.errors.PdfReadError:
+        st.error("Error: Could not read the PDF. It might be corrupted or not a valid PDF.")
+        return None
     except Exception as e:
         st.error(f"Error extracting text: {e}")
         return None
 
+
 def analyze_cv_hf(cv_text):
+    """Analyzes CV text using Hugging Face Inference API."""
+    if not cv_text:
+        return "Error: No CV text to analyze."  # Handle empty input
+
     payload = {
         "inputs": f"""
         Analyze the following CV text for ATS compliance.
@@ -34,47 +55,4 @@ def analyze_cv_hf(cv_text):
         {cv_text}
 
         Provide:
-        1. An ATS compliance score (0-100).
-        2. Specific feedback on areas for improvement.
-        3. Suggestions for how to improve the CV for ATS.
-        """,
-        "parameters": {"max_length": 500},
-    }
-    print("analyze_cv_hf function called")
-    print("Payload:", payload)
-
-    try:
-        print("Sending request to Hugging Face API...")
-        response = requests.post(
-            f"https://api-inference.huggingface.co/models/{HF_MODEL_NAME}",
-            headers=headers,
-            json=payload,
-        )
-        print("API Response (status code):", response.status_code)
-        print("API Response (text):", response.text)
-
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
-
-        data = response.json()
-        print("API Response (JSON):", data)
-
-        if isinstance(data, list) and len(data) > 0 and "generated_text" in data[0]:
-            result = data[0]["generated_text"]
-            print("Generated text found:", result)
-            return result
-        else:
-            print("Unexpected API response structure")
-            return None
-
-    except requests.exceptions.RequestException as e:
-        print("RequestException:", e)
-        st.error(f"Error analyzing CV: {e}")
-        return None
-    except ValueError as e:
-        print("ValueError:", e)
-        st.error(f"Error parsing API response: {e}")
-        return None
-    except Exception as e:
-        print("Exception:", e)
-        st.error(f"An unexpected error occurred: {e}")
-        return None
+        1.  An ATS compliance score (0-1
