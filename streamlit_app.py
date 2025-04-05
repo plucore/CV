@@ -42,17 +42,11 @@ def analyze_cv_hf(cv_text):
         return "Error: No CV text to analyze."  # Handle empty input
 
     payload = {
-        "inputs": f"""
-        Analyze the following CV text for ATS compliance.
-        Here are the ATS best practices:
-        - Use relevant keywords from the job description.
-        - Maintain clean and consistent formatting.
-        - Structure the CV with clear sections (e.g., Summary, Experience, Skills, Education).
-        - Avoid tables or images that may confuse ATS.
-        - Use standard section headings.
+        "inputs": f"""Analyze the following CV text for ATS compliance.
 
-        CV Text:
-        {cv_text}
+Here are the ATS best practices:
 
-        Provide:
-        1.  An ATS compliance score (0-1
+- Use relevant keywords from the job description.
+- Maintain clean and consistent formatting.
+- Structure the CV with clear sections (e.g., Summary, Experience, Skills, Education).
+- Avoid tables
