@@ -40,26 +40,41 @@ def analyze_cv_hf(cv_text):
         """,
         "parameters": {"max_length": 500},
     }
+    print("analyze_cv_hf function called")
+    print("Payload:", payload)
+
     try:
+        print("Sending request to Hugging Face API...")
         response = requests.post(
             f"https://api-inference.huggingface.co/models/{HF_MODEL_NAME}",
             headers=headers,
             json=payload,
         )
-        return response.json()[0]["generated_text"]
-    except Exception as e:
+        print("API Response (status code):", response.status_code)
+        print("API Response (text):", response.text)
+
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+
+        data = response.json()
+        print("API Response (JSON):", data)
+
+        if isinstance(data, list) and len(data) > 0 and "generated_text" in data[0]:
+            result = data[0]["generated_text"]
+            print("Generated text found:", result)
+            return result
+        else:
+            print("Unexpected API response structure")
+            return None
+
+    except requests.exceptions.RequestException as e:
+        print("RequestException:", e)
         st.error(f"Error analyzing CV: {e}")
         return None
-
-st.title("ATS CV Analyzer")
-uploaded_file = st.file_uploader("Upload your CV (PDF)", type=["pdf"])
-
-if uploaded_file is not None:
-    extracted_text = extract_text_from_pdf(uploaded_file)
-    if extracted_text:
-        with st.spinner("Analyzing CV..."):
-            analysis_result = analyze_cv_hf(extracted_text)
-        if analysis_result:
-            st.write(analysis_result)
-        else:
-            st.error("CV analysis failed.")
+    except ValueError as e:
+        print("ValueError:", e)
+        st.error(f"Error parsing API response: {e}")
+        return None
+    except Exception as e:
+        print("Exception:", e)
+        st.error(f"An unexpected error occurred: {e}")
+        return None
