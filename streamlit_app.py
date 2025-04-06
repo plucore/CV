@@ -10,7 +10,7 @@ st.set_page_config(page_title="ATS CV Analyzer", page_icon="📄")
 # API Configuration
 HF_API_TOKEN = st.secrets["HF_API_TOKEN"]
 # Try a more reliable model
-HF_MODEL_NAME = "google/flan-t5-xxl"  # Using a larger model that might follow instructions better
+HF_MODEL_NAME = "google/flan-t5-large"  # Using a larger model that might follow instructions better
 API_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL_NAME}"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
