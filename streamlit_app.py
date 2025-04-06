@@ -231,35 +231,35 @@ if uploaded_file:
         else:
             st.error("Could not extract text from the PDF.")
 
-# Add a quick test option
-if st.checkbox("Test with sample CV"):
-    sample_text = """
-    John Doe
-    Software Engineer
-    123 Main St, City, State
-    Phone: 555-123-4567
-    Email: john@example.com
+# # Add a quick test option
+# if st.checkbox("Test with sample CV"):
+#     sample_text = """
+#     John Doe
+#     Software Engineer
+#     123 Main St, City, State
+#     Phone: 555-123-4567
+#     Email: john@example.com
     
-    EXPERIENCE
-    Senior Developer, XYZ Corp (2018-Present)
-    - Led development of company's flagship product
-    - Managed team of 5 junior developers
+#     EXPERIENCE
+#     Senior Developer, XYZ Corp (2018-Present)
+#     - Led development of company's flagship product
+#     - Managed team of 5 junior developers
     
-    Developer, ABC Inc (2015-2018)
-    - Developed web applications using React
+#     Developer, ABC Inc (2015-2018)
+#     - Developed web applications using React
     
-    EDUCATION
-    BS Computer Science, State University (2015)
+#     EDUCATION
+#     BS Computer Science, State University (2015)
     
-    SKILLS
-    Programming: JavaScript, Python, Java
-    Tools: Git, Docker, AWS
-    """
+#     SKILLS
+#     Programming: JavaScript, Python, Java
+#     Tools: Git, Docker, AWS
+#     """
     
-    if st.button("Run Test Analysis"):
-        with st.spinner("Running test analysis..."):
-            test_result = analyze_cv(sample_text)
+#     if st.button("Run Test Analysis"):
+#         with st.spinner("Running test analysis..."):
+#             test_result = analyze_cv(sample_text)
         
-        if test_result:
-            st.subheader("Test Analysis Result")
-            format_analysis_output(test_result)
+#         if test_result:
+#             st.subheader("Test Analysis Result")
+#             format_analysis_output(test_result)
