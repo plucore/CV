@@ -3,6 +3,7 @@ import PyPDF2
 import requests
 import os
 import re  # For potential regex-based cleaning
+import time  # For potential retry logic
 
 # --- API Configuration ---
 HF_API_TOKEN = st.secrets.get("HF_API_TOKEN")  # Streamlit Secrets (most secure)
@@ -44,16 +45,21 @@ def analyze_cv_hf(cv_text):
     prompt = f"""
     Analyze the following CV for ATS compliance:
 
+    CV:
     {cv_text}
 
-    Provide:
+    Instructions:
 
-    Score (0-100), feedback, and suggestions.
+    1.  Provide an overall ATS compliance score (0-100).
+    2.  Give bullet-point feedback on 3 key areas for improvement.
+    3.  Offer 3 specific, actionable suggestions to optimize the CV for ATS.
+
+    Output:
     """
 
     payload = {
         "inputs": prompt,
-        "parameters": {"max_length": 300}  # Adjust as needed
+        "parameters": {"max_length": 400}  # Adjust as needed
     }
 
     try:
@@ -81,6 +87,30 @@ def analyze_cv_hf(cv_text):
         return f"An unexpected error occurred: {e}"
 
 
+def test_api_connection():
+    """
+    Temporary function to test the Hugging Face API connection.
+    This is for debugging purposes.
+    """
+    test_prompt = "The quick brown fox jumps over the lazy dog."
+    test_payload = {"inputs": test_prompt, "parameters": {"max_length": 50}}
+
+    try:
+        response = requests.post(
+            f"https://api-inference.huggingface.co/models/{HF_MODEL_NAME}",
+            headers=headers,
+            json=test_payload,
+            timeout=10,
+        )
+        response.raise_for_status()
+        result = response.json()
+        st.success(f"API Connection Test Successful: {result}")
+    except requests.exceptions.RequestException as e:
+        st.error(f"API Connection Test Failed: {e}")
+    except Exception as e:
+        st.error(f"API Test Error: {e}")
+
+
 # --- Streamlit UI ---
 st.title("ATS CV Analyzer")
 st.markdown(
@@ -99,3 +129,7 @@ if uploaded_file is not None:
             analysis_result = analyze_cv_hf(extracted_text)
         st.subheader("Analysis Results")
         st.write(analysis_result)
+
+# --- Temporary Test Button ---
+if st.button("Test API Connection"):
+    test_api_connection()
