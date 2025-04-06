@@ -42,15 +42,45 @@ def analyze_cv_hf(cv_text):
     if not cv_text:
         return "Error: No CV text to analyze."  # Handle empty input
 
-    print("analyze_cv_hf called with cv_text:", cv_text)  # Log input
+    prompt = "Analyze the following CV for ATS compliance:\n\n"  # Explicit newlines
+    prompt += "CV:\n"
+    prompt += f"{cv_text}\n\n"  # Insert CV text
+    prompt += "Instructions:\n\n"
+    prompt += "1. Provide an overall ATS compliance score (0-100).\n"
+    prompt += "2. Give bullet-point feedback on 3 key areas for improvement.\n"
+    prompt += "3. Offer 3 specific, actionable suggestions to optimize the CV for ATS.\n\n"
+    prompt += "Output:\n"
 
-    prompt = f"""
-    Analyze the following CV for ATS compliance:
+    payload = {
+        "inputs": prompt,
+        "parameters": {"max_length": 400}  # Adjust as needed
+    }
 
-    CV:
-    {cv_text}
+    try:
+        response = requests.post(
+            f"https://api-inference.huggingface.co/models/{HF_MODEL_NAME}",
+            headers=headers,
+            json=payload,
+            timeout=30,  # Add timeout (in seconds)
+        )
+        response.raise_for_status()  # Raise HTTPError for bad responses
 
-    Instructions:
+        data = response.json()
+        if isinstance(data, list) and data and "generated_text" in data[0]:
+            return clean_text(data[0]["generated_text"])
+        else:
+            return "Error: Unexpected API response."
 
-    1.  Provide an overall ATS compliance score (0-100).
-    2.  Give bullet-point feedback on
+    except requests.exceptions.Timeout:
+        return "Error: API request timed out."
+    except requests.exceptions.RequestException as e:
+        return f"Error analyzing CV: {e}"
+    except ValueError as e:
+        return f"Error parsing API response: {e}"
+    except Exception as e:
+        return f"An unexpected error occurred: {e}"
+
+
+def test_api_connection():
+    """
+    Temporary
