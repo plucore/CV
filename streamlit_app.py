@@ -91,4 +91,77 @@ def analyze_cv_hf(cv_text, max_retries=3, initial_delay=1):
         except ValueError as e:
             if attempt < max_retries - 1:
                 delay = initial_delay * (2 ** attempt)
-                print(f"Retry attempt {attempt +
+                print(f"Retry attempt {attempt + 2} after {delay} seconds...")
+                time.sleep(delay)
+            else:
+                return f"Error parsing API response: {e}"
+        except Exception as e:
+            if attempt < max_retries - 1:
+                delay = initial_delay * (2 ** attempt)
+                print(f"Retry attempt {attempt + 2} after {delay} seconds...")
+                time.sleep(delay)
+            else:
+                return f"An unexpected error occurred: {e}"
+
+    return "Error: Max retries exceeded."
+
+
+def test_api_connection():
+    """
+    Temporary function to test the Hugging Face API connection.
+    This is for debugging purposes.
+    """
+    test_prompt = "The quick brown fox jumps over the lazy dog."
+    test_payload = {"inputs": test_prompt, "parameters": {"max_length": 50}}
+
+    print("Testing API Connection...")
+    print("Model:", HF_MODEL_NAME)
+    print("Token Present:", HF_API_TOKEN is not None)  # Check if token is being read
+
+    try:
+        response = requests.post(
+            f"https://api-inference.huggingface.co/models/{HF_MODEL_NAME}",
+            headers=headers,
+            json=test_payload,
+            timeout=10,
+        )
+        print("Response Status Code:", response.status_code)
+        print("Response Text:", response.text)  # Log the raw response
+
+        response.raise_for_status()
+        result = response.json()
+        print("API Response JSON:", result)  # Log the parsed JSON
+        st.success(f"API Connection Test Successful: {result}")
+    except requests.exceptions.RequestException as e:
+        print("RequestException:", e)
+        st.error(f"API Connection Test Failed: {e}")
+    except Exception as e:
+        print("General Exception:", e)
+        st.error(f"API Test Error: {e}")
+
+
+# --- Streamlit UI ---
+st.title("ATS CV Analyzer")
+st.markdown(
+    """
+    Upload your CV (PDF) to get an ATS compliance analysis.
+    This tool helps you identify areas for improvement to increase your CV's visibility to Applicant Tracking Systems.
+    """
+)
+
+uploaded_file = st.file_uploader("Upload your CV (PDF)", type=["pdf"])
+
+if uploaded_file is not None:
+    extracted_text = extract_text_from_pdf(uploaded_file)
+    if extracted_text:
+        with st.spinner("Analyzing CV..."):
+            analysis_result = analyze_cv_hf(extracted_text)
+        st.subheader("Analysis Results")
+        st.write(analysis_result)
+
+# --- Temporary Test Button ---
+if st.button("Run Analyze CV Test"):
+    test_cv_text = "John Doe\n123 Main St\nAnytown, CA 91234\nSummary: Highly motivated and results-oriented professional..."  # A short test CV
+    result = analyze_cv_hf(test_cv_text)
+    st.subheader("Analyze CV Test Result:")
+    st.write(result)
