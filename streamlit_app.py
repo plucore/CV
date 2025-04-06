@@ -44,18 +44,43 @@ def analyze_cv_hf(cv_text, max_retries=3, initial_delay=1):
     if not cv_text:
         return "Error: No CV text to analyze."  # Handle empty input
 
-    prompt = "Analyze the following CV for ATS compliance:\n\n"  # Explicit newlines
-    prompt += "CV:\n"
-    prompt += f"{cv_text}\n\n"  # Insert CV text
-    prompt += "Instructions:\n\n"
-    prompt += "1. Provide an overall ATS compliance score (0-100).\n"
-    prompt += "2. Give bullet-point feedback on 3 key areas for improvement.\n"
-    prompt += "3. Offer 3 specific, actionable suggestions to optimize the CV for ATS.\n\n"
-    prompt += "Output:\n"
+    prompt = f"""
+    You are an expert in Applicant Tracking Systems (ATS).
+
+    Analyze the following CV for ATS compliance:
+
+    CV:
+    {cv_text}
+
+    Instructions:
+
+    Follow these steps exactly:
+
+    1.  First, provide an overall ATS compliance score for the CV (0-100).
+    2.  Then, give bullet-point feedback on exactly 3 key areas where the CV can be improved for ATS compliance. Each bullet point should be one sentence.
+    3.  Finally, offer 3 specific, actionable suggestions to optimize the CV for ATS. Each suggestion should be one sentence.
+
+    Output:
+
+    ATS Compliance Score:
+    Feedback:
+    -
+    -
+    -
+    Suggestions:
+    -
+    -
+    -
+    """
 
     payload = {
         "inputs": prompt,
-        "parameters": {"max_length": 400}  # Adjust as needed
+        "parameters": {
+            "max_length": 500,
+            "temperature": 0.4,  # Slightly less random
+            "do_sample": False,  # More deterministic
+            "top_p": 0.85       # Nucleus sampling
+        }
     }
 
     for attempt in range(max_retries):
