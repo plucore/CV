@@ -6,7 +6,7 @@ import re  # For potential regex-based cleaning
 
 # --- API Configuration ---
 HF_API_TOKEN = st.secrets.get("HF_API_TOKEN")  # Streamlit Secrets (most secure)
-HF_MODEL_NAME = "google/flan-t5-xxl"  # Or your preferred Hugging Face model
+HF_MODEL_NAME = "google/flan-t5-large"  # Or your preferred Hugging Face model
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
 
