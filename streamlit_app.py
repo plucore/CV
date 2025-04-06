@@ -27,7 +27,9 @@ def extract_text_from_pdf(file):
         reader = PyPDF2.PdfReader(file)
         text = ""
         for page in reader.pages:
-            text += page.extract_text() or ""  # Handle empty pages
+            page_text = page.extract_text()
+            if page_text:  # Check if page_text is not None
+                text += page_text
         return clean_text(text)  # Clean the extracted text
     except PyPDF2.errors.PdfReadError:
         st.error("Error: Could not read the PDF. It might be corrupted or not a valid PDF.")
@@ -37,7 +39,7 @@ def extract_text_from_pdf(file):
         return None
 
 
-def analyze_cv_hf(cv_text):
+def analyze_cv_hf(cv_text, max_retries=3, initial_delay=1):
     """Analyzes CV text using Hugging Face Inference API."""
     if not cv_text:
         return "Error: No CV text to analyze."  # Handle empty input
@@ -56,31 +58,37 @@ def analyze_cv_hf(cv_text):
         "parameters": {"max_length": 400}  # Adjust as needed
     }
 
-    try:
-        response = requests.post(
-            f"https://api-inference.huggingface.co/models/{HF_MODEL_NAME}",
-            headers=headers,
-            json=payload,
-            timeout=30,  # Add timeout (in seconds)
-        )
-        response.raise_for_status()  # Raise HTTPError for bad responses
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(
+                f"https://api-inference.huggingface.co/models/{HF_MODEL_NAME}",
+                headers=headers,
+                json=payload,
+                timeout=30,  # Add timeout (in seconds)
+            )
+            response.raise_for_status()  # Raise HTTPError for bad responses
 
-        data = response.json()
-        if isinstance(data, list) and data and "generated_text" in data[0]:
-            return clean_text(data[0]["generated_text"])
-        else:
-            return "Error: Unexpected API response."
+            data = response.json()
+            if isinstance(data, list) and data and "generated_text" in data[0]:
+                return clean_text(data[0]["generated_text"])
+            else:
+                return "Error: Unexpected API response."
 
-    except requests.exceptions.Timeout:
-        return "Error: API request timed out."
-    except requests.exceptions.RequestException as e:
-        return f"Error analyzing CV: {e}"
-    except ValueError as e:
-        return f"Error parsing API response: {e}"
-    except Exception as e:
-        return f"An unexpected error occurred: {e}"
-
-
-def test_api_connection():
-    """
-    Temporary
+        except requests.exceptions.Timeout:
+            if attempt < max_retries - 1:
+                delay = initial_delay * (2 ** attempt)
+                print(f"Retry attempt {attempt + 2} after {delay} seconds...")
+                time.sleep(delay)
+            else:
+                return "Error: API request timed out."
+        except requests.exceptions.RequestException as e:
+            if attempt < max_retries - 1:
+                delay = initial_delay * (2 ** attempt)
+                print(f"Retry attempt {attempt + 2} after {delay} seconds...")
+                time.sleep(delay)
+            else:
+                return f"Error analyzing CV: {e}"
+        except ValueError as e:
+            if attempt < max_retries - 1:
+                delay = initial_delay * (2 ** attempt)
+                print(f"Retry attempt {attempt +
